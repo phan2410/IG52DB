@@ -1,0 +1,299 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" 
+	xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+	xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+	xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+	name="IG52DB">
+	
+	<xacro:property name="pi" value="3.1415926535897931" />
+	
+	<!--base footprint is needed for easier frame setting
+	for some shared ros control-->
+	<link name="base_footprint">
+		<inertial>
+			<origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+    	<mass value="0.0001" />
+    	<inertia 
+    		ixx="1.0" 
+    		ixy="0.0" 
+    		ixz="0.0"
+        iyy="1.0" 
+        iyz="0.0"
+        izz="1.0" />
+  	</inertial>
+  	<visual>
+  		<origin 
+  			rpy="0 0 0" 
+  			xyz="0 0 0" />
+			<geometry>
+      	<box size="0.001 0.001 0.001" />
+    	</geometry>
+  	</visual>
+ 	</link>
+ 	
+ 	<!--gazebo plugin setting-->
+ 	<gazebo reference="base_footprint">
+		<material>Gazebo/Green</material>
+		<turnGravityOff>false</turnGravityOff>
+	</gazebo>
+	
+	<!--base link joint to base footprint-->
+	<joint name="base_link_base_footprint" type="fixed">
+		<origin xyz="0 0 0" />
+		<parent link="base_footprint" />
+		<child link="base_link" />
+	</joint>
+	<link name="base_link">
+    <inertial>
+      <origin
+        xyz="0 0 0.184799868005312"
+        rpy="0 0 0" />
+      <mass
+        value="7.21517752108585" />
+      <inertia
+        ixx="0.0575359303331007"
+        ixy="0.000101854892928064"
+        ixz="1.4050580272022E-05"
+        iyy="0.1156615184442"
+        iyz="8.13118408977844E-06"
+        izz="0.148245723820908" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+     		<mesh 
+      		filename="package://bot_description/mesh/base_link.dae" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0.184799868005312"
+        rpy="0 0 0" />
+      <geometry>
+        <box 
+        	size="0.49 0.37 0.18" />
+      </geometry>
+    </collision>
+  </link>
+  
+  <!--xacro macro 4 wheel, with number is the order of wheel 1,2,3,4
+  , x0,y0 defined quarter of coordinate where corresponding wheel is
+  located, for example 1,1 -1,1 -1,-1 -1,1 -->
+  <xacro:macro name="wheel" params="number x0 y0">  
+		<joint
+		  name="wheel${number}_base_link"
+		  type="continuous">
+		  <origin
+		    xyz="${x0 * 0.1905} ${y0 * 0.242266} 0.130"
+		    rpy="0 0 ${-0.5 * pi * y0}" />
+		  <parent
+		    link="base_link" />
+		  <child
+		    link="wheel${number}" />
+		  <axis
+		    xyz="${-1 * y0} 0 0" />
+		</joint>  
+		<link
+		  name="wheel${number}">
+		  <inertial>
+		    <origin
+		      xyz="0.00243677970803194 -3.79024847591003E-07 4.21247624393661E-07"
+		      rpy="0 0 0" />
+		    <mass
+		      value="0.67751354463347" />
+		    <inertia
+		      ixx="0.00701389567182806"
+		      ixy="-2.02211773010821E-07"
+		      ixz="9.77926367510551E-09"
+		      iyy="0.00408444856585223"
+		      iyz="7.37676493092014E-09"
+		      izz="0.00408509355754381" />
+		  </inertial>
+		  <visual>
+		    <origin
+		      xyz="0 0 0"
+		      rpy="0 0 0" />
+		    <geometry>
+		      <mesh
+		        filename="package://bot_description/mesh/wheel.dae" />
+		    </geometry>
+		  </visual>
+		  <collision>
+		    <origin
+		      xyz="0 0 0"
+		      rpy="0 ${pi * 0.5} 0" />
+		    <geometry>
+		      <cylinder
+		        length="0.007" radius="0.13" />
+		    </geometry>
+		  </collision>
+		  <collision>
+		    <origin
+		      xyz="0 0 0"
+		      rpy="0 ${pi * 0.5} 0" />
+		    <geometry>
+		      <cylinder
+		        length="0.08" radius="0.127" />
+		    </geometry>
+		  </collision>
+		</link>
+  </xacro:macro>
+  
+  <!--4 wheel xacro macros-->
+  <xacro:wheel number="1" x0="1" y0="1" />
+  <xacro:wheel number="2" x0="1" y0="-1" />
+  <xacro:wheel number="3" x0="-1" y0="-1" />
+  <xacro:wheel number="4" x0="-1" y0="1" />	
+  
+  <!-- Hokuyo Laser -->  
+  <joint name="hokuyo_laser_base_link" type="fixed">
+    <axis xyz="0 0 1" />
+    <origin xyz="0.175 0 0.277" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="hokuyo_laser" />
+  </joint>
+  <link name="hokuyo_laser">
+      <inertial>
+    	<origin 
+    		xyz="0 0 0" 
+    		rpy="0 0 0" />
+      <mass value="1E-7" />      
+      <inertia 
+      	ixx="1E-7" 
+      	ixy="0" 
+      	ixz="0" 
+      	iyy="1E-7" 
+      	iyz="0" 
+      	izz="1E-7" />
+    </inertial>
+    <visual>
+      <origin 
+      	xyz="0 0 0" 
+      	rpy="0 0 0" />
+      <geometry>
+        <mesh 
+        	filename="package://bot_description/mesh/hokuyo.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin 
+      	xyz="0 0 0" 
+      	rpy="0 0 0" />
+      <geometry>
+				<box size="0.07 0.07 0.07" />
+      </geometry>
+    </collision>
+  </link>
+  
+  <!--Hokuyo Laser gazebo-API-ros plugin-->
+  <gazebo reference="hokuyo_laser">
+    <sensor type="ray" name="head_hokuyo_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise parameters based on published spec for Hokuyo laser
+               achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+               stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+               reading. -->
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+        <topicName>/laserscan</topicName>
+        <frameName>hokuyo_laser</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  
+  <!-- If you wish to add Camera, please uncomment this part
+  this will give a scene view from hokuyo laser
+  <gazebo reference="hokuyo_laser">
+    <sensor type="camera" name="camera1">
+      <update_rate>30.0</update_rate>
+      <camera name="head">
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>800</width>
+          <height>800</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0.0</updateRate>
+        <cameraName>/camera1</cameraName>
+        <imageTopicName>laserview</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>hokuyo_laser</frameName>
+        <hackBaseline>0.07</hackBaseline>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+  If you wish to add Camera, please uncomment lines above-->
+   
+  <!-- 4 Wheel Gazebo Driver -->
+	<gazebo>
+		<plugin name="skid_steer_drive_controller" filename="libgazebo_ros_skid_steer_drive.so">
+		  <updateRate>100.0</updateRate>
+		  <robotNamespace>/</robotNamespace>
+		  <leftFrontJoint>wheel1_base_link</leftFrontJoint>
+		  <rightFrontJoint>wheel2_base_link</rightFrontJoint>
+		  <leftRearJoint>wheel4_base_link</leftRearJoint>
+		  <rightRearJoint>wheel3_base_link</rightRearJoint>
+		  <wheelSeparation>0.484532</wheelSeparation>
+		  <wheelDiameter>0.26</wheelDiameter>    
+		  <robotBaseFrame>base_footprint</robotBaseFrame> 
+		  <torque>11</torque>
+		  <topicName>cmd_vel</topicName>  
+		  <commandTopic>cmd_vel</commandTopic>
+		  <odometryTopic>odom</odometryTopic>
+		  <odometryFrame>odom</odometryFrame>
+		  <broadcastTF>false</broadcastTF>
+		</plugin>
+	</gazebo>
+	
+	<!-- Ros Control Plugin just in case needed -->
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/</robotNamespace>
+    </plugin>
+  </gazebo>
+  
+  
+</robot>
